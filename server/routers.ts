@@ -57,6 +57,7 @@ import {
   updateUserRole,
   updateUserLastSignIn,
   updateUserPassword,
+  updateUserActive,
   getAdminCount,
   getUserByEmployeeId,
   getDb,
@@ -84,6 +85,9 @@ export const appRouter = router({
         const user = await getUserByEmployeeId(normalizeEmployeeId(input.employeeId));
         if (!user || !verifyPassword(input.password, user.passwordHash)) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "사번 또는 비밀번호가 올바르지 않습니다." });
+        }
+        if (user.isActive === false) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "비활성화된 계정입니다. 관리자에게 문의하세요." });
         }
         await updateUserLastSignIn(user.id);
         const token = await createSessionToken({ userId: user.id, name: user.name ?? "" });
@@ -171,6 +175,15 @@ export const appRouter = router({
       .input(z.object({ userId: z.number(), newPassword: z.string().min(4) }))
       .mutation(async ({ input }) => {
         await updateUserPassword(input.userId, hashPassword(input.newPassword));
+        return { success: true };
+      }),
+    setActive: adminProcedure
+      .input(z.object({ userId: z.number(), isActive: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        if (input.userId === ctx.user.id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "자기 자신은 비활성화할 수 없습니다." });
+        }
+        await updateUserActive(input.userId, input.isActive);
         return { success: true };
       }),
   }),

@@ -10,6 +10,7 @@ import { HardHat } from "lucide-react";
 
 export default function LoginPage() {
   const utils = trpc.useUtils();
+  const [activeTab, setActiveTab] = useState("login");
 
   // 로그인
   const [loginId, setLoginId] = useState("");
@@ -37,8 +38,9 @@ export default function LoginPage() {
 
   const registerMutation = trpc.auth.register.useMutation({
     onSuccess: (data) => {
-      toast.success(data.role === "admin" ? "관리자 계정이 생성됐습니다!" : "계정이 생성됐습니다. 로그인해주세요.");
+      toast.success(data.role === "admin" ? "관리자 계정이 생성됐습니다! 로그인하세요." : "계정이 생성됐습니다. 로그인하세요.");
       setRegId(""); setRegPw(""); setRegName(""); setRegEmail(""); setRegAdminKey("");
+      setActiveTab("login");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -55,7 +57,7 @@ export default function LoginPage() {
           <p className="text-muted-foreground text-sm">건설현장 직원 포털</p>
         </div>
 
-        <Tabs defaultValue="login">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full">
             <TabsTrigger value="login" className="flex-1">로그인</TabsTrigger>
             <TabsTrigger value="register" className="flex-1">계정 등록</TabsTrigger>

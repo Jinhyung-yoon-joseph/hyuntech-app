@@ -43,6 +43,7 @@ async function initDatabase() {
         name TEXT,
         email VARCHAR(320),
         role ENUM('user','admin') NOT NULL DEFAULT 'user',
+        isActive BOOLEAN NOT NULL DEFAULT TRUE,
         createdAt TIMESTAMP NOT NULL DEFAULT NOW(),
         updatedAt TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE NOW(),
         lastSignedIn TIMESTAMP NOT NULL DEFAULT NOW()
