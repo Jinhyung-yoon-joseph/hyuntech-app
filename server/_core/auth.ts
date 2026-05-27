@@ -30,7 +30,7 @@ export async function createSessionToken(payload: SessionPayload): Promise<strin
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime(`${ONE_YEAR_MS}ms`)
+    .setExpirationTime("1y")
     .sign(getSecretKey());
 }
 
