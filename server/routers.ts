@@ -5,7 +5,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { storagePut } from "./storage";
-import { hashPassword, verifyPassword, createSessionToken } from "./_core/auth";
+import { hashPassword, verifyPassword, createSessionToken, normalizeEmployeeId } from "./_core/auth";
 import {
   createDailyReport,
   createNotification,
@@ -81,7 +81,7 @@ export const appRouter = router({
     login: publicProcedure
       .input(z.object({ employeeId: z.string().min(1), password: z.string().min(1) }))
       .mutation(async ({ input, ctx }) => {
-        const user = await getUserByEmployeeId(input.employeeId);
+        const user = await getUserByEmployeeId(normalizeEmployeeId(input.employeeId));
         if (!user || !verifyPassword(input.password, user.passwordHash)) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "사번 또는 비밀번호가 올바르지 않습니다." });
         }
@@ -102,6 +102,8 @@ export const appRouter = router({
         adminKey: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
+        // 사번 정규화
+        input = { ...input, employeeId: normalizeEmployeeId(input.employeeId) };
         // 중복 체크
         const existing = await getUserByEmployeeId(input.employeeId);
         if (existing) {
@@ -127,6 +129,20 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+
+    // 계정이 막혔을 때 전체 초기화 (사용자가 0명일 때만 작동)
+    resetAllUsers: publicProcedure
+      .input(z.object({ confirmKey: z.string() }))
+      .mutation(async ({ input }) => {
+        if (input.confirmKey !== "reset-hyuntech-users-2024") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "잘못된 초기화 키입니다." });
+        }
+        const db2 = await getDb();
+        if (!db2) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { users: usersTable } = await import("../drizzle/schema");
+        await db2.delete(usersTable);
+        return { success: true, message: "모든 계정이 초기화됐습니다. 새로 등록하세요!" };
+      }),
 
     changePassword: protectedProcedure
       .input(z.object({ currentPassword: z.string(), newPassword: z.string().min(4) }))

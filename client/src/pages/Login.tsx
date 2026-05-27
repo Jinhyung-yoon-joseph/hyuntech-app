@@ -30,6 +30,11 @@ export default function LoginPage() {
     onError: (e) => toast.error(e.message),
   });
 
+  const resetMutation = trpc.auth.resetAllUsers.useMutation({
+    onSuccess: (data) => toast.success(data.message),
+    onError: (e) => toast.error(e.message),
+  });
+
   const registerMutation = trpc.auth.register.useMutation({
     onSuccess: (data) => {
       toast.success(data.role === "admin" ? "관리자 계정이 생성됐습니다!" : "계정이 생성됐습니다. 로그인해주세요.");
@@ -136,6 +141,22 @@ export default function LoginPage() {
                 <p className="text-xs text-muted-foreground text-center">
                   최초 등록자는 자동으로 관리자가 됩니다
                 </p>
+                <div className="border-t pt-3 mt-1">
+                  <p className="text-xs text-muted-foreground text-center mb-2">계정이 막혔을 때만 사용</p>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => {
+                      if (confirm("모든 계정을 초기화할까요? 기존 데이터는 유지됩니다.")) {
+                        resetMutation.mutate({ confirmKey: "reset-hyuntech-users-2024" });
+                      }
+                    }}
+                    disabled={resetMutation.isPending}
+                  >
+                    {resetMutation.isPending ? "초기화 중..." : "계정 전체 초기화 (비상용)"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

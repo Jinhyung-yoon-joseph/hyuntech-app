@@ -16,7 +16,6 @@ export type SessionPayload = {
   name: string;
 };
 
-// bcrypt 없이 SHA-256 + salt 사용 (의존성 최소화)
 export function hashPassword(password: string): string {
   const salt = "hyuntech-salt-2024";
   return createHash("sha256").update(salt + password).digest("hex");
@@ -24,6 +23,17 @@ export function hashPassword(password: string): string {
 
 export function verifyPassword(password: string, hash: string): boolean {
   return hashPassword(password) === hash;
+}
+
+// 사번 정규화 - 대소문자 무시, cp/id 부분 소문자로 통일
+export function normalizeEmployeeId(employeeId: string): string {
+  // 앞뒤 공백 제거
+  let id = employeeId.trim();
+  // CP로 시작하면 소문자 cp로
+  id = id.replace(/^cp/i, "cp");
+  // .ID로 끝나면 소문자 .id로  
+  id = id.replace(/\.id$/i, ".id");
+  return id;
 }
 
 export async function createSessionToken(payload: SessionPayload): Promise<string> {
